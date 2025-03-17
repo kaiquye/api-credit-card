@@ -1,4 +1,4 @@
-package br.com.kaique.common;
+package br.com.kaique.entitys;
 
 public enum ECardStatementStatus {
   OPEN,
