@@ -8,10 +8,11 @@ import org.hibernate.annotations.UpdateTimestamp;
 
 @MappedSuperclass
 public abstract class EntityBase {
-  @Column(nullable = false, updatable = false)
+
+  @Column(name = "created_at", nullable = false, updatable = false)
   @CreationTimestamp
   private LocalDateTime createdAt;
-  @Column(nullable = false)
+  @Column(name = "updated_at", nullable = false)
   @UpdateTimestamp
   private LocalDateTime updatedAt;
 

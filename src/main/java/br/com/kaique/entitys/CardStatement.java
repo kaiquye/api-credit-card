@@ -1,6 +1,8 @@
 package br.com.kaique.entitys;
 
 import br.com.kaique.common.EntityBase;
+import com.fasterxml.jackson.annotation.JsonFormat;
+import io.micronaut.serde.annotation.Serdeable;
 import jakarta.persistence.*;
 import java.time.LocalDateTime;
 import java.util.ArrayList;
@@ -16,6 +18,7 @@ import lombok.Setter;
 @NoArgsConstructor
 @Entity
 @Table(name = "card_statement")
+@Serdeable
 public class CardStatement extends EntityBase {
 
   @Id
@@ -32,16 +35,16 @@ public class CardStatement extends EntityBase {
   @Column(name = "started_at", nullable = false)
   private LocalDateTime startedAt;
 
-  @Column(name = "ended_at", nullable = true)
-  private LocalDateTime endedAt;
+  @Column(name = "due_date", nullable = true)
+  private LocalDateTime dueDate;
 
-  @OneToMany(mappedBy = "statement", cascade = CascadeType.ALL, orphanRemoval = true)
+  @OneToMany(mappedBy = "statement", cascade = CascadeType.ALL, orphanRemoval = true, fetch = FetchType.LAZY)
   private List<CardTransaction> transactionList = new ArrayList<>();
 
   @ManyToOne
   @JoinColumn(name = "credit_card_id", nullable = false)
   private Card card;
 
-  @OneToMany(mappedBy = "statement", cascade = CascadeType.ALL, orphanRemoval = true)
+  @OneToMany(mappedBy = "statement", cascade = CascadeType.ALL, orphanRemoval = true, fetch = FetchType.LAZY)
   private List<CardTransactionInstallment> transactionInstallmentList = new ArrayList<>();
 }
