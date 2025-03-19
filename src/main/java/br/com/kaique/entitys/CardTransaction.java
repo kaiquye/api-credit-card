@@ -1,9 +1,11 @@
 package br.com.kaique.entitys;
 
 import br.com.kaique.common.EntityBase;
+import io.micronaut.serde.annotation.Serdeable;
 import jakarta.persistence.CascadeType;
 import jakarta.persistence.Column;
 import jakarta.persistence.Entity;
+import jakarta.persistence.FetchType;
 import jakarta.persistence.GeneratedValue;
 import jakarta.persistence.GenerationType;
 import jakarta.persistence.Id;
@@ -24,6 +26,7 @@ import lombok.Setter;
 @AllArgsConstructor
 @NoArgsConstructor
 @Entity
+@Serdeable
 @Table(name = "card_transaction")
 public class CardTransaction extends EntityBase {
 
@@ -46,10 +49,10 @@ public class CardTransaction extends EntityBase {
   @Column(name = "purchase_date")
   private LocalDateTime purchaseDate;
 
-  @ManyToOne
+  @ManyToOne(fetch = FetchType.EAGER)
   @JoinColumn(name = "card_statements_id", nullable = false)
   private CardStatement statement;
 
-  @OneToMany(mappedBy = "transaction", cascade = CascadeType.ALL)
+  @OneToMany(mappedBy = "transaction", cascade = CascadeType.ALL, fetch = FetchType.LAZY)
   private List<CardTransactionInstallment> transactionInstallmentList = new ArrayList<>();
 }

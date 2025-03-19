@@ -1,156 +1,147 @@
 package br.com.kaique.services.transaction.create_transaction.impl;
 
 import br.com.kaique.common.CustomException;
-import br.com.kaique.entitys.Card;
-import br.com.kaique.entitys.CardStatement;
-import br.com.kaique.entitys.CardTransaction;
-import br.com.kaique.entitys.CardTransactionInstallment;
-import br.com.kaique.entitys.ECardStatementStatus;
-import br.com.kaique.repositories.CardRepository;
-import br.com.kaique.repositories.CardStatementRepository;
-import br.com.kaique.repositories.CardTransactionInstallmentRepository;
-import br.com.kaique.repositories.CardTransactionRepository;
-import br.com.kaique.services.transaction.create_transaction.CreateTransactionInput;
-import br.com.kaique.services.transaction.create_transaction.CreateTransactionOutput;
-import br.com.kaique.services.transaction.create_transaction.CreateTransactionUseCase;
+import br.com.kaique.entitys.*;
+import br.com.kaique.repositories.*;
+import br.com.kaique.services.transaction.create_transaction.*;
 import io.micronaut.http.HttpStatus;
 import jakarta.inject.Inject;
 import jakarta.inject.Singleton;
 import jakarta.transaction.Transactional;
-import java.time.LocalDateTime;
-import java.util.ArrayList;
-import java.util.List;
-import java.util.Optional;
 import lombok.RequiredArgsConstructor;
+import java.time.LocalDateTime;
+import java.util.*;
 
 @Singleton
-@RequiredArgsConstructor()
+@RequiredArgsConstructor
 public class CreateTransactionUseCaseImpl implements CreateTransactionUseCase {
 
-  @Inject()
-  private final CardTransactionInstallmentRepository cardTransactionInstallmentRepository;
-
-  @Inject()
-  private final CardTransactionRepository cardTransactionRepository;
-
-  @Inject()
-  private final CardStatementRepository cardStatementRepository;
-
-  @Inject()
+  @Inject
+  private final CardTransactionInstallmentRepository installmentRepository;
+  @Inject
+  private final CardTransactionRepository transactionRepository;
+  @Inject
+  private final CardStatementRepository statementRepository;
+  @Inject
   private final CardRepository cardRepository;
 
-  @Transactional()
-  @Override()
-  public CreateTransactionOutput execute(CreateTransactionInput data) {
-    Card card = this.findOrCreateCardByAccountNumber(data.accountNumber());
+  @Transactional
+  @Override
+  public Card execute(CreateTransactionInput input) {
+    Card card = findOrCreateCard(input.accountNumber());
+    validatePurchaseDate(input.purchaseDate());
+    validateInstallmentAmounts(input);
 
-    // VERIFICAR SE A DATA DA COMPRA N'AO E PASSADA (COLOCAR O TIME DE 1 MINUTOS)
-    this.validateIfPurchaseDateIsValid(data.purchaseDate());
-
-    // VERIFICAR SE O VALOR DAS PARCELAS N'AO FICA MAIOR QUE O VALOR DO PRODUTO
-    // VERIFICAR SE O VALOR DA PARCELA E MAIOR QUE O VALOR DO PRODUTO
-    this.validateTotalInstallmentAmount(data.numberOfInstallments(), data.installmentAmount(),
-        data.totalPurchaseAmount());
-
-    // VERIFICAR SE A FATURA NAO E DUPLICADA PELA A DATA
-    Optional<CardTransaction> existingTransaction = this.cardTransactionRepository.findByPurchaseDate(
-        data.purchaseDate());
-    if (existingTransaction.isPresent()) {
+    if (transactionRepository.findByPurchaseDate(input.purchaseDate()).isPresent()) {
       throw new CustomException("A transaction with this purchase date already exists.",
           HttpStatus.CONFLICT);
     }
 
-    // VERIFICAR SE EXISTE FATURA EM ABERTO
-    Optional<CardStatement> activeCardStatementOptional = this.cardStatementRepository.findStatementOpenedByCardId(
-        card.getId());
-    if (activeCardStatementOptional.isEmpty()) {
-      throw new CustomException("No active statement found.", HttpStatus.CONFLICT);
-    }
-    CardStatement activeCardStatement = activeCardStatementOptional.get();
+    CardStatement activeStatement = statementRepository.findStatementOpenedByCardId(card.getId())
+        .orElseThrow(() -> new CustomException("No active statement found.", HttpStatus.CONFLICT));
 
-    // CRIAR NOVAS FATURAS PELA QUANTIDADE DE PARCELAS
+    CardTransaction transaction = createTransaction(input, activeStatement);
+    List<CardTransactionInstallment> installments = createInstallments(input, activeStatement,
+        transaction);
 
-    CardTransaction cardTransaction = new CardTransaction();
-    cardTransaction.setCompanyName(data.companyName());
-    cardTransaction.setInstallmentsCount(data.numberOfInstallments());
-    cardTransaction.setInstallmentsAmount(data.installmentAmount());
-    cardTransaction.setTotalPurchaseAmount(data.totalPurchaseAmount());
-    cardTransaction.setPurchaseDate(data.purchaseDate());
-    cardTransaction.setStatement(activeCardStatement);
+    processStatements(card, installments, transaction);
 
-    List<CardTransactionInstallment> cardTransactionInstallmentList = new ArrayList<>();
-    for (var i = 0; data.numberOfInstallments() >= i; i++) {
-      CardTransactionInstallment cardTransactionInstallment = new CardTransactionInstallment();
+    transaction.getTransactionInstallmentList().addAll(installments);
 
-      cardTransactionInstallment.setAmount(data.installmentAmount());
-      cardTransactionInstallment.setInstallmentNumber(data.numberOfInstallments());
-      cardTransactionInstallment.setStatement(activeCardStatement);
-      cardTransactionInstallment.setAmount(data.installmentAmount());
-      cardTransactionInstallment.setTransaction(cardTransaction);
+    transactionRepository.save(transaction);
+    statementRepository.save(activeStatement);
+    installmentRepository.saveAll(installments);
 
-      cardTransactionInstallmentList.add(cardTransactionInstallment);
-    }
-
-    this.cardTransactionInstallmentRepository.saveAll(cardTransactionInstallmentList);
-
-    cardTransaction.getTransactionInstallmentList().addAll(cardTransactionInstallmentList);
-    activeCardStatement.getTransactionInstallmentList().addAll(cardTransactionInstallmentList);
-
-    this.cardTransactionRepository.save(cardTransaction);
-
-    // ATUALIZAR STATUS DA FATURA
-
-    activeCardStatement.getTransactionList().add(cardTransaction);
-    activeCardStatement.setTotalAmount(
-        activeCardStatement.getTotalAmount() + data.totalPurchaseAmount()
-    );
-
-    this.cardStatementRepository.save(activeCardStatement);
-    // SALVAR AS PARCELAS
-    // SALVAR A TRANSACAO
-    // ATUALIZAR FATURA
-    return null;
-  }
-
-  private Card findOrCreateCardByAccountNumber(int accountNumber) {
-    Optional<Card> cardOptional = this.cardRepository.findByAccountNumber(accountNumber);
-    if (cardOptional.isPresent()) {
-      return cardOptional.get();
-    }
-
-    Card newCard = new Card();
-    newCard.setAccountNumber(accountNumber);
-
-    CardStatement newCardStatement = new CardStatement();
-    newCardStatement.setTotalAmount((double) 0);
-    newCardStatement.setCard(newCard);
-    newCardStatement.setStartedAt(LocalDateTime.now());
-    newCardStatement.setStatus(ECardStatementStatus.OPEN);
-
-    Card card = this.cardRepository.save(newCard);
-
-    this.cardStatementRepository.save(newCardStatement);
     return card;
   }
 
-  private void validateIfPurchaseDateIsValid(LocalDateTime purchaseDate) {
-    LocalDateTime now = LocalDateTime.now().minusMinutes(3);
-    if (purchaseDate.isBefore(now)) {
+  private Card findOrCreateCard(int accountNumber) {
+    return cardRepository.findByAccountNumber(accountNumber).orElseGet(() -> {
+      Card newCard = new Card();
+      newCard.setAccountNumber(accountNumber);
+      newCard = cardRepository.save(newCard);
+
+      CardStatement newStatement = new CardStatement();
+      newStatement.setCard(newCard);
+      newStatement.setTotalAmount(0.0);
+      newStatement.setStartedAt(LocalDateTime.now());
+      newStatement.setDueDate(LocalDateTime.now().plusMonths(1));
+      newStatement.setStatus(ECardStatementStatus.OPEN);
+      statementRepository.save(newStatement);
+
+      return newCard;
+    });
+  }
+
+  private void validatePurchaseDate(LocalDateTime purchaseDate) {
+    if (purchaseDate.isBefore(LocalDateTime.now().minusMinutes(3))) {
       throw new CustomException("The purchase date cannot be in the past.", HttpStatus.BAD_REQUEST);
     }
   }
 
-  private void validateTotalInstallmentAmount(int numberOfInstallments, Double installmentAmount,
-      Double totalPurchaseAmount) {
-    if (installmentAmount > totalPurchaseAmount) {
+  private void validateInstallmentAmounts(CreateTransactionInput input) {
+    double totalCalculated = input.numberOfInstallments() * input.installmentAmount();
+    if (input.installmentAmount() > input.totalPurchaseAmount()
+        || totalCalculated > input.totalPurchaseAmount()) {
       throw new CustomException("The total installment amount cannot exceed the purchase amount.",
           HttpStatus.BAD_REQUEST);
+    }
+  }
+
+  private CardTransaction createTransaction(CreateTransactionInput input, CardStatement statement) {
+    CardTransaction transaction = new CardTransaction();
+    transaction.setCompanyName(input.companyName());
+    transaction.setInstallmentsCount(input.numberOfInstallments());
+    transaction.setInstallmentsAmount(input.installmentAmount());
+    transaction.setTotalPurchaseAmount(input.totalPurchaseAmount());
+    transaction.setPurchaseDate(input.purchaseDate());
+    transaction.setStatement(statement);
+    return transaction;
+  }
+
+  private List<CardTransactionInstallment> createInstallments(CreateTransactionInput input,
+      CardStatement statement, CardTransaction transaction) {
+    List<CardTransactionInstallment> installments = new ArrayList<>();
+    for (int i = 0; i < input.numberOfInstallments(); i++) {
+      CardTransactionInstallment installment = new CardTransactionInstallment();
+      installment.setInstallmentNumber(i + 1);
+      installment.setStatement(statement);
+      installment.setAmount(input.installmentAmount());
+      installment.setTransaction(transaction);
+      installments.add(installment);
+    }
+    return installments;
+  }
+
+  private void processStatements(Card card, List<CardTransactionInstallment> installments,
+      CardTransaction transaction) {
+    List<CardStatement> statements = statementRepository.findByStatusInAndCardIdOrderByStartedAt(
+        List.of(ECardStatementStatus.OPEN, ECardStatementStatus.FUTURE), card.getId());
+
+    for (int i = 0; i < statements.size() && i < installments.size(); i++) {
+      CardStatement statement = statements.get(i);
+      CardTransactionInstallment installment = installments.get(i);
+      statement.setTotalAmount(statement.getTotalAmount() + installment.getAmount());
+      statement.getTransactionList().add(transaction);
+      statement.getTransactionInstallmentList().add(installment);
     }
 
-    double totalAmount = numberOfInstallments * installmentAmount;
-    if (totalAmount > totalPurchaseAmount) {
-      throw new CustomException("The total installment amount cannot exceed the purchase amount.",
-          HttpStatus.BAD_REQUEST);
+    for (int i = statements.size(); i < installments.size(); i++) {
+      LocalDateTime startDate = statements.getLast().getStartedAt().plusMonths(1);
+      LocalDateTime dueDate = startDate.plusMonths(1);
+
+      CardStatement futureStatement = new CardStatement();
+      futureStatement.setCard(card);
+      futureStatement.setTotalAmount(installments.get(i).getAmount());
+      futureStatement.setTransactionList(List.of(transaction));
+      futureStatement.setStartedAt(startDate);
+      futureStatement.setDueDate(dueDate);
+      futureStatement.setStatus(ECardStatementStatus.FUTURE);
+      futureStatement.setTransactionInstallmentList(List.of(installments.get(i)));
+
+      statements.add(futureStatement);
     }
+
+    statementRepository.saveAll(statements);
   }
 }
