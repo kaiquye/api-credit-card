@@ -1,9 +1,9 @@
 package br.com.kaique.entitys;
 
-import br.com.kaique.common.ECardStatementStatus;
 import br.com.kaique.common.EntityBase;
 import jakarta.persistence.*;
 import java.time.LocalDateTime;
+import java.util.ArrayList;
 import java.util.List;
 import lombok.AllArgsConstructor;
 import lombok.Getter;
@@ -29,20 +29,19 @@ public class CardStatement extends EntityBase {
   @Column(name = "total_amount", nullable = false)
   private Double totalAmount;
 
-
   @Column(name = "started_at", nullable = false)
   private LocalDateTime startedAt;
 
-  @Column(name = "ended_at", nullable = false)
+  @Column(name = "ended_at", nullable = true)
   private LocalDateTime endedAt;
 
   @OneToMany(mappedBy = "statement", cascade = CascadeType.ALL, orphanRemoval = true)
-  private List<CardTransaction> transactionList;
+  private List<CardTransaction> transactionList = new ArrayList<>();
 
   @ManyToOne
   @JoinColumn(name = "credit_card_id", nullable = false)
   private Card card;
 
   @OneToMany(mappedBy = "statement", cascade = CascadeType.ALL, orphanRemoval = true)
-  private List<CardTransactionInstallment> transactionInstallmentList;
+  private List<CardTransactionInstallment> transactionInstallmentList = new ArrayList<>();
 }

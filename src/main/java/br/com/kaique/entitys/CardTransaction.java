@@ -12,6 +12,7 @@ import jakarta.persistence.ManyToOne;
 import jakarta.persistence.OneToMany;
 import jakarta.persistence.Table;
 import java.time.LocalDateTime;
+import java.util.ArrayList;
 import java.util.List;
 import lombok.AllArgsConstructor;
 import lombok.Getter;
@@ -37,18 +38,18 @@ public class CardTransaction extends EntityBase {
   private Integer installmentsCount;
 
   @Column(name = "installments_amount", nullable = false)
-  private Integer installmentsAmount;
+  private Double installmentsAmount;
 
-  @Column(name = "total_amount", nullable = false)
-  private Integer totalAmount;
+  @Column(name = "total_purchase_amount", nullable = false)
+  private Double totalPurchaseAmount;
 
-  @Column(name = "date")
-  private LocalDateTime date;
+  @Column(name = "purchase_date")
+  private LocalDateTime purchaseDate;
 
   @ManyToOne
   @JoinColumn(name = "card_statements_id", nullable = false)
   private CardStatement statement;
 
-  @OneToMany(mappedBy = "transaction", cascade = CascadeType.ALL, orphanRemoval = true)
-  private List<CardTransactionInstallment> transactionInstallmentList;
+  @OneToMany(mappedBy = "transaction", cascade = CascadeType.ALL)
+  private List<CardTransactionInstallment> transactionInstallmentList = new ArrayList<>();
 }
