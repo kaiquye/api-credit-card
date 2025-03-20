@@ -43,8 +43,10 @@ public class CloseStatementUseCaseImpl implements CloseCardStatementUseCase {
 
     var nextStatementOptional = this.findNextStatement(card);
     if (nextStatementOptional.isPresent()) {
+      statement.setStatus(ECardStatementStatus.FINALIZED);
       var nextStatement = nextStatementOptional.get();
       nextStatement.setStatus(ECardStatementStatus.OPEN);
+      this.cardStatementRepository.save(statement);
       this.cardStatementRepository.save(nextStatement);
 
       return null;
