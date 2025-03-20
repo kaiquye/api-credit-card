@@ -1,0 +1,51 @@
+package br.com.kaique.services.transaction.list_transaction.impl;
+
+import br.com.kaique.common.CustomException;
+import br.com.kaique.entitys.CardTransaction;
+import br.com.kaique.repositories.CardRepository;
+import br.com.kaique.repositories.CardStatementRepository;
+import br.com.kaique.repositories.CardTransactionRepository;
+import br.com.kaique.services.transaction.list_transaction.ListTransactionInput;
+import br.com.kaique.services.transaction.list_transaction.ListTransactionUseCase;
+import io.micronaut.http.HttpStatus;
+import jakarta.inject.Inject;
+import jakarta.inject.Singleton;
+import java.time.LocalDate;
+import java.util.List;
+import lombok.RequiredArgsConstructor;
+
+@RequiredArgsConstructor
+@Singleton
+public class ListTransactionUseCaseImpl implements ListTransactionUseCase {
+
+  @Inject()
+  private final CardRepository cardRepository;
+
+  @Inject()
+  private final CardTransactionRepository cardTransactionRepository;
+
+  @Inject()
+  private final CardStatementRepository cardStatementRepository;
+
+  @Override
+  public List<CardTransaction> execute(ListTransactionInput data) {
+    var cardOptional = this.cardRepository.findByAccountNumber(data.accountNumber());
+    if (cardOptional.isEmpty()) {
+      throw new CustomException("Card by account number not found", HttpStatus.NOT_FOUND);
+    }
+
+    int month = data.monthOfStatement();
+    int year = LocalDate.now().getYear();
+
+    var cardStatementOptional = this.cardStatementRepository.findByCardIdAndMonth(
+        cardOptional.get().getId(), month, year);
+    if (cardStatementOptional.isEmpty()) {
+      throw new CustomException("Statement by account number not found", HttpStatus.NOT_FOUND);
+    }
+
+    var listOfTransactionByStatement = this.cardTransactionRepository.findAllByStatementId(
+        cardStatementOptional.get().getId());
+
+    return listOfTransactionByStatement;
+  }
+}

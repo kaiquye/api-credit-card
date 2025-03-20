@@ -38,8 +38,13 @@ public class CardStatement extends EntityBase {
   @Column(name = "due_date", nullable = true)
   private LocalDateTime dueDate;
 
-  @OneToMany(mappedBy = "statement", cascade = CascadeType.ALL, orphanRemoval = true, fetch = FetchType.LAZY)
-  private List<CardTransaction> transactionList = new ArrayList<>();
+  @ManyToMany
+  @JoinTable(
+      name = "card_statement_transaction",
+      joinColumns = @JoinColumn(name = "card_statement_id"),
+      inverseJoinColumns = @JoinColumn(name = "card_transaction_id")
+  )
+  private List<CardTransaction> transactions = new ArrayList<>();
 
   @ManyToOne
   @JoinColumn(name = "credit_card_id", nullable = false)

@@ -10,6 +10,7 @@ import jakarta.persistence.GeneratedValue;
 import jakarta.persistence.GenerationType;
 import jakarta.persistence.Id;
 import jakarta.persistence.JoinColumn;
+import jakarta.persistence.ManyToMany;
 import jakarta.persistence.ManyToOne;
 import jakarta.persistence.OneToMany;
 import jakarta.persistence.Table;
@@ -49,10 +50,9 @@ public class CardTransaction extends EntityBase {
   @Column(name = "purchase_date")
   private LocalDateTime purchaseDate;
 
-  @ManyToOne(fetch = FetchType.EAGER)
-  @JoinColumn(name = "card_statements_id", nullable = false)
-  private CardStatement statement;
-
-  @OneToMany(mappedBy = "transaction", cascade = CascadeType.ALL, fetch = FetchType.LAZY)
+  @OneToMany(mappedBy = "transaction", cascade = CascadeType.ALL, fetch = FetchType.EAGER)
   private List<CardTransactionInstallment> transactionInstallmentList = new ArrayList<>();
+
+  @ManyToMany(mappedBy = "transactions", fetch = FetchType.EAGER)
+  private List<CardStatement> statements = new ArrayList<>();
 }
