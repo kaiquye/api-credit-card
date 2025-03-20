@@ -41,16 +41,28 @@ public class CreateTransactionUseCaseImpl implements CreateTransactionUseCase {
         .orElseThrow(() -> new CustomException("No active statement found.", HttpStatus.CONFLICT));
 
     CardTransaction transaction = createTransaction(input, activeStatement);
-    List<CardTransactionInstallment> installments = createInstallments(input, activeStatement,
-        transaction);
 
-    processStatements(card, installments, transaction);
+    this.transactionRepository.save(transaction);
 
-    transaction.getTransactionInstallmentList().addAll(installments);
+    transaction.getStatements().add(activeStatement);
+    activeStatement.getTransactions().add(transaction);
 
-    transactionRepository.save(transaction);
-    statementRepository.save(activeStatement);
-    installmentRepository.saveAll(installments);
+    this.transactionRepository.save(transaction);
+    this.statementRepository.save(activeStatement);
+
+    List<CardTransactionInstallment> installmentList = createInstallments(input, transaction);
+
+    List<CardStatement> statementList = processStatements(card, installmentList, transaction);
+    statementRepository.saveAll(statementList);
+
+    transaction.getTransactionInstallmentList().addAll(installmentList);
+    this.transactionRepository.save(transaction);
+
+    for (int i = 0; i < installmentList.size(); i++) {
+      installmentList.get(i).setStatement(statementList.get(i));
+    }
+
+    this.installmentRepository.saveAll(installmentList);
 
     return card;
   }
@@ -95,25 +107,26 @@ public class CreateTransactionUseCaseImpl implements CreateTransactionUseCase {
     transaction.setInstallmentsAmount(input.installmentAmount());
     transaction.setTotalPurchaseAmount(input.totalPurchaseAmount());
     transaction.setPurchaseDate(input.purchaseDate());
-    transaction.setStatement(statement);
+
     return transaction;
   }
 
   private List<CardTransactionInstallment> createInstallments(CreateTransactionInput input,
-      CardStatement statement, CardTransaction transaction) {
+      CardTransaction transaction) {
     List<CardTransactionInstallment> installments = new ArrayList<>();
     for (int i = 0; i < input.numberOfInstallments(); i++) {
       CardTransactionInstallment installment = new CardTransactionInstallment();
       installment.setInstallmentNumber(i + 1);
-      installment.setStatement(statement);
       installment.setAmount(input.installmentAmount());
       installment.setTransaction(transaction);
       installments.add(installment);
     }
+
     return installments;
   }
 
-  private void processStatements(Card card, List<CardTransactionInstallment> installments,
+  private List<CardStatement> processStatements(Card card,
+      List<CardTransactionInstallment> installments,
       CardTransaction transaction) {
     List<CardStatement> statements = statementRepository.findByStatusInAndCardIdOrderByStartedAt(
         List.of(ECardStatementStatus.OPEN, ECardStatementStatus.FUTURE), card.getId());
@@ -122,7 +135,7 @@ public class CreateTransactionUseCaseImpl implements CreateTransactionUseCase {
       CardStatement statement = statements.get(i);
       CardTransactionInstallment installment = installments.get(i);
       statement.setTotalAmount(statement.getTotalAmount() + installment.getAmount());
-      statement.getTransactionList().add(transaction);
+      statement.getTransactions().add(transaction);
       statement.getTransactionInstallmentList().add(installment);
     }
 
@@ -133,15 +146,15 @@ public class CreateTransactionUseCaseImpl implements CreateTransactionUseCase {
       CardStatement futureStatement = new CardStatement();
       futureStatement.setCard(card);
       futureStatement.setTotalAmount(installments.get(i).getAmount());
-      futureStatement.setTransactionList(List.of(transaction));
+      futureStatement.getTransactions().add(transaction);
       futureStatement.setStartedAt(startDate);
       futureStatement.setDueDate(dueDate);
       futureStatement.setStatus(ECardStatementStatus.FUTURE);
-      futureStatement.setTransactionInstallmentList(List.of(installments.get(i)));
+      futureStatement.getTransactionInstallmentList().add(installments.get(i));
 
       statements.add(futureStatement);
     }
 
-    statementRepository.saveAll(statements);
+    return statements;
   }
 }
