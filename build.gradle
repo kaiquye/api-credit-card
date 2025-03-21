@@ -14,8 +14,6 @@ repositories {
 
 dependencies {
     annotationProcessor("io.micronaut.openapi:micronaut-openapi")
-    implementation("io.micronaut.openapi:micronaut-openapi-annotations")
-
 
     implementation("org.mapstruct:mapstruct:1.5.5.Final")
     annotationProcessor("org.mapstruct:mapstruct-processor:1.5.5.Final")
@@ -31,13 +29,14 @@ dependencies {
     implementation("io.micronaut.data:micronaut-data-hibernate-jpa")
     implementation("io.micronaut.validation:micronaut-validation")
     implementation("io.micronaut.sql:micronaut-jdbc-hikari")
-    implementation("org.postgresql:postgresql") // Adicionado PostgreSQL
+    implementation("org.postgresql:postgresql")
 
     compileOnly("io.micronaut:micronaut-http-client")
     compileOnly("org.projectlombok:lombok")
+    compileOnly("io.micronaut.openapi:micronaut-openapi-annotations")
 
     runtimeOnly("ch.qos.logback:logback-classic")
-    runtimeOnly("org.postgresql:postgresql") // Removido H2 e adicionado PostgreSQL
+    runtimeOnly("org.postgresql:postgresql")
 
     testImplementation("io.micronaut:micronaut-http-client")
 }
