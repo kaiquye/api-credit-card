@@ -29,6 +29,7 @@ public class CreateTransactionUseCaseImpl implements CreateTransactionUseCase {
   @Override
   public Card execute(CreateTransactionInput input) {
     Card card = findOrCreateCard(input.accountNumber());
+
     validatePurchaseDate(input.purchaseDate());
     validateInstallmentAmounts(input);
 
@@ -40,49 +41,47 @@ public class CreateTransactionUseCaseImpl implements CreateTransactionUseCase {
     CardStatement activeStatement = statementRepository.findStatementOpenedByCardId(card.getId())
         .orElseThrow(() -> new CustomException("No active statement found.", HttpStatus.CONFLICT));
 
+    // Criando uma nova transação
     CardTransaction transaction = createTransaction(input, activeStatement);
+    transactionRepository.save(transaction);
 
-    this.transactionRepository.save(transaction);
-
-    transaction.getStatements().add(activeStatement);
-    activeStatement.getTransactions().add(transaction);
-
-    this.transactionRepository.save(transaction);
-    this.statementRepository.save(activeStatement);
-
+    // Criando as parcelas da transação
     List<CardTransactionInstallment> installmentList = createInstallments(input, transaction);
 
+    // Atualizando faturas existentes e criando novs se ---> necessario <---
     List<CardStatement> statementList = processStatements(card, installmentList, transaction);
     statementRepository.saveAll(statementList);
 
     transaction.getTransactionInstallmentList().addAll(installmentList);
-    this.transactionRepository.save(transaction);
+    transactionRepository.save(transaction);
 
-    for (int i = 0; i < installmentList.size(); i++) {
-      installmentList.get(i).setStatement(statementList.get(i));
-    }
-
-    this.installmentRepository.saveAll(installmentList);
+    linkInstallmentsToStatements(installmentList, statementList);
+    installmentRepository.saveAll(installmentList);
 
     return card;
   }
 
   private Card findOrCreateCard(int accountNumber) {
-    return cardRepository.findByAccountNumber(accountNumber).orElseGet(() -> {
-      Card newCard = new Card();
-      newCard.setAccountNumber(accountNumber);
-      newCard = cardRepository.save(newCard);
+    var cardOptional = cardRepository.findByAccountNumber(accountNumber);
+    if (cardOptional.isPresent()) {
+      return cardOptional.get();
+    }
 
-      CardStatement newStatement = new CardStatement();
-      newStatement.setCard(newCard);
-      newStatement.setTotalAmount(0.0);
-      newStatement.setStartedAt(LocalDateTime.now());
-      newStatement.setDueDate(LocalDateTime.now().plusMonths(1));
-      newStatement.setStatus(ECardStatementStatus.OPEN);
-      statementRepository.save(newStatement);
+    // Criando um novo cartão associado ao número da conta
+    Card newCard = new Card();
+    newCard.setAccountNumber(accountNumber);
+    newCard = cardRepository.save(newCard);
 
-      return newCard;
-    });
+    // Criando a primeira fatura do cartão
+    CardStatement newStatement = new CardStatement();
+    newStatement.setCard(newCard);
+    newStatement.setTotalAmount(0.0);
+    newStatement.setStartedAt(LocalDateTime.now());
+    newStatement.setDueDate(LocalDateTime.now().plusMonths(1));
+    newStatement.setStatus(ECardStatementStatus.OPEN);
+    statementRepository.save(newStatement);
+
+    return newCard;
   }
 
   private void validatePurchaseDate(LocalDateTime purchaseDate) {
@@ -100,13 +99,23 @@ public class CreateTransactionUseCaseImpl implements CreateTransactionUseCase {
     }
   }
 
+  private void linkInstallmentsToStatements(List<CardTransactionInstallment> installments,
+      List<CardStatement> statements) {
+    // Associando cada parcela à sua respectiva fatura
+    for (int i = 0; i < installments.size(); i++) {
+      installments.get(i).setStatement(statements.get(i));
+    }
+  }
+
   private CardTransaction createTransaction(CreateTransactionInput input, CardStatement statement) {
+    // Criando e populando uma nova transação
     CardTransaction transaction = new CardTransaction();
     transaction.setCompanyName(input.companyName());
     transaction.setInstallmentsCount(input.numberOfInstallments());
     transaction.setInstallmentsAmount(input.installmentAmount());
     transaction.setTotalPurchaseAmount(input.totalPurchaseAmount());
     transaction.setPurchaseDate(input.purchaseDate());
+    transaction.getStatements().add(statement);
 
     return transaction;
   }
@@ -114,6 +123,8 @@ public class CreateTransactionUseCaseImpl implements CreateTransactionUseCase {
   private List<CardTransactionInstallment> createInstallments(CreateTransactionInput input,
       CardTransaction transaction) {
     List<CardTransactionInstallment> installments = new ArrayList<>();
+
+    // Criando as parcelas da transação
     for (int i = 0; i < input.numberOfInstallments(); i++) {
       CardTransactionInstallment installment = new CardTransactionInstallment();
       installment.setInstallmentNumber(i + 1);
@@ -131,6 +142,7 @@ public class CreateTransactionUseCaseImpl implements CreateTransactionUseCase {
     List<CardStatement> statements = statementRepository.findByStatusInAndCardIdOrderByStartedAt(
         List.of(ECardStatementStatus.OPEN, ECardStatementStatus.FUTURE), card.getId());
 
+    // Atualizando faturas existentes
     for (int i = 0; i < statements.size() && i < installments.size(); i++) {
       CardStatement statement = statements.get(i);
       CardTransactionInstallment installment = installments.get(i);
@@ -139,6 +151,7 @@ public class CreateTransactionUseCaseImpl implements CreateTransactionUseCase {
       statement.getTransactionInstallmentList().add(installment);
     }
 
+    // Criando novas faturas futuras se --_>necessário<---
     for (int i = statements.size(); i < installments.size(); i++) {
       LocalDateTime startDate = statements.getLast().getStartedAt().plusMonths(1);
       LocalDateTime dueDate = startDate.plusMonths(1);

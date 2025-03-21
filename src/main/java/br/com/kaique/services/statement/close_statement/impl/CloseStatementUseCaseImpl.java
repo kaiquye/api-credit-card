@@ -1,6 +1,5 @@
 package br.com.kaique.services.statement.close_statement.impl;
 
-
 import br.com.kaique.common.CustomException;
 import br.com.kaique.entitys.Card;
 import br.com.kaique.entitys.CardStatement;
