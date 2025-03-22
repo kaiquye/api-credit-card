@@ -46,7 +46,7 @@ public class CreateTransactionUseCaseImpl implements CreateTransactionUseCase {
     transactionRepository.save(transaction);
 
     // Criando as parcelas da transação
-    List<CardTransactionInstallment> installmentList = createInstallments(input, transaction);
+    List<CardTransactionInstallment> installmentList = createInstallments(input, transaction, card);
 
     // Atualizando faturas existentes e criando novs se ---> necessario <---
     List<CardStatement> statementList = processStatements(card, installmentList, transaction);
@@ -121,13 +121,19 @@ public class CreateTransactionUseCaseImpl implements CreateTransactionUseCase {
   }
 
   private List<CardTransactionInstallment> createInstallments(CreateTransactionInput input,
-      CardTransaction transaction) {
+      CardTransaction transaction, Card card) {
     List<CardTransactionInstallment> installments = new ArrayList<>();
+
+    // Pegando o número da última parcela registrada para continuar a sequência
+    var lastInstallment = this.installmentRepository.findLastByCardId(card.getId());
+    int lastInstallmentNumber = lastInstallment.isPresent()
+        ? lastInstallment.get().getInstallmentNumber()
+        : 0;
 
     // Criando as parcelas da transação
     for (int i = 0; i < input.numberOfInstallments(); i++) {
       CardTransactionInstallment installment = new CardTransactionInstallment();
-      installment.setInstallmentNumber(i + 1);
+      installment.setInstallmentNumber(lastInstallmentNumber + i);
       installment.setAmount(input.installmentAmount());
       installment.setTransaction(transaction);
       installments.add(installment);

@@ -6,6 +6,6 @@ import br.com.kaique.entitys.CardTransaction;
 import java.util.List;
 
 public interface ListTransactionUseCase extends
-    UseCaseBase<ListTransactionInput, List<CardTransaction>> {
+    UseCaseBase<ListTransactionInput, List<ListTransactionOutput>> {
 
 }

@@ -51,4 +51,7 @@ public interface CardStatementRepository extends JpaRepository<CardStatement, Lo
       ECardStatementStatus status,
       Long cardId
   );
+
+
+  List<CardStatement> findAllByCardId(Long cardId);
 }
