@@ -1,4 +1,4 @@
-package br.com.kaique.services.statement;
+package br.com.kaique.services;
 
 import br.com.kaique.common.CustomException;
 import br.com.kaique.entitys.ECardStatementStatus;
