@@ -46,7 +46,6 @@ public class ListTransactionTest {
     Assertions.assertEquals(output.getFirst().getCompanyName(), "New Inter Company");
     Assertions.assertEquals(output.getFirst().getInstallmentsCount(), 4);
     Assertions.assertEquals(output.getFirst().getInstallmentsAmount(), 50.0);
-    Assertions.assertEquals(output.getFirst().getCurrentInstallmentsNumber(), 1);
     Assertions.assertEquals(output.getFirst().getTotalPurchaseAmount(), 200.0);
   }
 

@@ -16,13 +16,9 @@ import java.util.*;
 @RequiredArgsConstructor
 public class CreateTransactionUseCaseImpl implements CreateTransactionUseCase {
 
-  @Inject
   private final CardTransactionInstallmentRepository installmentRepository;
-  @Inject
   private final CardTransactionRepository transactionRepository;
-  @Inject
   private final CardStatementRepository statementRepository;
-  @Inject
   private final CardRepository cardRepository;
 
   @Transactional

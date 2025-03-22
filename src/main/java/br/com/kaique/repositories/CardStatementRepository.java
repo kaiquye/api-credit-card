@@ -54,4 +54,13 @@ public interface CardStatementRepository extends JpaRepository<CardStatement, Lo
 
 
   List<CardStatement> findAllByCardId(Long cardId);
+
+  @Query("SELECT c FROM CardStatement c WHERE c.status = :status AND c.startedAt BETWEEN :startOfMonth AND :endOfMonth")
+  List<CardStatement> findAllByStatusAndDateRange(ECardStatementStatus status,
+      LocalDateTime startOfMonth,
+      LocalDateTime endOfMonth);
+
+  @Query("SELECT c FROM CardStatement c WHERE c.startedAt BETWEEN :startOfMonth AND :endOfMonth")
+  List<CardStatement> findAllByDateRange(LocalDateTime startOfMonth,
+      LocalDateTime endOfMonth);
 }

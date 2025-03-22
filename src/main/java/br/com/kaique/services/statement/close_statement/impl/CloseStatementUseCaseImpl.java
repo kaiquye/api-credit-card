@@ -36,16 +36,17 @@ public class CloseStatementUseCaseImpl implements CloseCardStatementUseCase {
       throw new CustomException("Statement status does not allow this action.",
           HttpStatus.NOT_FOUND);
     }
+    statement.setDueDate(LocalDateTime.now());
     statement.setStatus(ECardStatementStatus.FINALIZED);
 
     this.cardStatementRepository.save(statement);
 
     var nextStatementOptional = this.findNextStatement(card);
     if (nextStatementOptional.isPresent()) {
-      statement.setStatus(ECardStatementStatus.FINALIZED);
       var nextStatement = nextStatementOptional.get();
       nextStatement.setStatus(ECardStatementStatus.OPEN);
-      this.cardStatementRepository.save(statement);
+      nextStatement.setStartedAt(LocalDateTime.now());
+
       this.cardStatementRepository.save(nextStatement);
 
       return null;
