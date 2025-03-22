@@ -13,7 +13,6 @@ repositories {
 }
 
 dependencies {
-
     annotationProcessor("io.micronaut.openapi:micronaut-openapi")
 
     implementation("org.mapstruct:mapstruct:1.5.5.Final")

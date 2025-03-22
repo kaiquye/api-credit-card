@@ -20,16 +20,9 @@ import lombok.RequiredArgsConstructor;
 @Singleton
 public class ListTransactionUseCaseImpl implements ListTransactionUseCase {
 
-  @Inject()
   private final CardRepository cardRepository;
-
-  @Inject()
   private final CardTransactionRepository cardTransactionRepository;
-
-  @Inject()
   private final CardStatementRepository cardStatementRepository;
-
-  @Inject()
   private final CardTransactionInstallmentRepository cardTransactionInstallmentRepository;
 
   @Override
