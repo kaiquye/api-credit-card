@@ -1,4 +1,4 @@
-package br.com.kaique.services;
+package br.com.kaique.services.transaction;
 
 import br.com.kaique.common.CustomException;
 import br.com.kaique.entitys.ECardStatementStatus;
@@ -12,7 +12,6 @@ import java.time.LocalDateTime;
 import org.junit.jupiter.api.Assertions;
 import org.junit.jupiter.api.Test;
 
-
 @MicronautTest
 public class CreateTransactionTest {
 
@@ -23,13 +22,14 @@ public class CreateTransactionTest {
   @Inject
   CardStatementRepository statementRepository;
 
+  // compra a vista
   @Test
-  void shouldCreateTransactionWithFourInstallments() {
+  void shouldCreateSingleInstallmentTransactionWithNewStatement() {
     var input = CreateTransactionInput.builder()
         .accountNumber(123455)
-        .numberOfInstallments(4)
+        .numberOfInstallments(1)
         .companyName("Inter Company")
-        .installmentAmount(50.00)
+        .installmentAmount(200.00)
         .totalPurchaseAmount(200.00)
         .purchaseDate(LocalDateTime.now())
         .build();
@@ -56,13 +56,14 @@ public class CreateTransactionTest {
         input.numberOfInstallments());
   }
 
+  // compra parcelada
   @Test
-  void shouldCreateTransactionWithOneInstallmentAndNewStatement() {
+  void shouldCreateTransactionWithFourInstallments() {
     var input = CreateTransactionInput.builder()
         .accountNumber(123455)
-        .numberOfInstallments(1)
+        .numberOfInstallments(4)
         .companyName("Inter Company")
-        .installmentAmount(200.00)
+        .installmentAmount(50.00)
         .totalPurchaseAmount(200.00)
         .purchaseDate(LocalDateTime.now())
         .build();
@@ -146,6 +147,46 @@ public class CreateTransactionTest {
         () -> this.createTransactionUseCase.execute(input)
     );
     Assertions.assertEquals("The total installment amount cannot exceed the purchase amount.",
+        exception.getMessage());
+  }
+
+  @Test
+  void shouldFailWhenTotalPurchaseAmountIsInvalid() {
+    var input = CreateTransactionInput.builder()
+        .accountNumber(123455)
+        .numberOfInstallments(2)
+        .companyName("Inter Company")
+        .installmentAmount(50.00)
+        .totalPurchaseAmount(0.00)
+        .purchaseDate(LocalDateTime.now())
+        .build();
+
+    CustomException exception = Assertions.assertThrows(
+        CustomException.class,
+        () -> this.createTransactionUseCase.execute(input)
+    );
+
+    Assertions.assertEquals("Total purchase amount must be greater than zero.",
+        exception.getMessage());
+  }
+
+  @Test
+  void shouldFailWhenNumberOfInstallmentsIsInvalid() {
+    var input = CreateTransactionInput.builder()
+        .accountNumber(123455)
+        .numberOfInstallments(0)
+        .companyName("Inter Company")
+        .installmentAmount(200.00)
+        .totalPurchaseAmount(200.00)
+        .purchaseDate(LocalDateTime.now())
+        .build();
+
+    CustomException exception = Assertions.assertThrows(
+        CustomException.class,
+        () -> this.createTransactionUseCase.execute(input)
+    );
+
+    Assertions.assertEquals("Number of installments must be greater than zero.",
         exception.getMessage());
   }
 }

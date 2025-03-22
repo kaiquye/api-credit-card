@@ -28,6 +28,16 @@ public class CreateTransactionUseCaseImpl implements CreateTransactionUseCase {
   @Transactional
   @Override
   public Card execute(CreateTransactionInput input) {
+    if (input.numberOfInstallments() <= 0) {
+      throw new CustomException("Number of installments must be greater than zero.",
+          HttpStatus.BAD_REQUEST);
+    }
+
+    if (input.totalPurchaseAmount() <= 0) {
+      throw new CustomException("Total purchase amount must be greater than zero.",
+          HttpStatus.BAD_REQUEST);
+    }
+
     Card card = findOrCreateCard(input.accountNumber());
 
     validatePurchaseDate(input.purchaseDate());
@@ -48,7 +58,7 @@ public class CreateTransactionUseCaseImpl implements CreateTransactionUseCase {
     // Criando as parcelas da transação
     List<CardTransactionInstallment> installmentList = createInstallments(input, transaction, card);
 
-    // Atualizando faturas existentes e criando novs se ---> necessario <---
+    // Atualizando faturas existentes e criando novas se necessario
     List<CardStatement> statementList = processStatements(card, installmentList, transaction);
     statementRepository.saveAll(statementList);
 
@@ -67,12 +77,10 @@ public class CreateTransactionUseCaseImpl implements CreateTransactionUseCase {
       return cardOptional.get();
     }
 
-    // Criando um novo cartão associado ao número da conta
     Card newCard = new Card();
     newCard.setAccountNumber(accountNumber);
     newCard = cardRepository.save(newCard);
 
-    // Criando a primeira fatura do cartão
     CardStatement newStatement = new CardStatement();
     newStatement.setCard(newCard);
     newStatement.setTotalAmount(0.0);
@@ -108,7 +116,6 @@ public class CreateTransactionUseCaseImpl implements CreateTransactionUseCase {
   }
 
   private CardTransaction createTransaction(CreateTransactionInput input, CardStatement statement) {
-    // Criando e populando uma nova transação
     CardTransaction transaction = new CardTransaction();
     transaction.setCompanyName(input.companyName());
     transaction.setInstallmentsCount(input.numberOfInstallments());
@@ -157,7 +164,7 @@ public class CreateTransactionUseCaseImpl implements CreateTransactionUseCase {
       statement.getTransactionInstallmentList().add(installment);
     }
 
-    // Criando novas faturas futuras se --_>necessário<---
+    // Novas faturas futuras se necessário
     for (int i = statements.size(); i < installments.size(); i++) {
       LocalDateTime startDate = statements.getLast().getStartedAt().plusMonths(1);
       LocalDateTime dueDate = startDate.plusMonths(1);
