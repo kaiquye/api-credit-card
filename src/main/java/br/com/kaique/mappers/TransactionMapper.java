@@ -1,7 +1,7 @@
 package br.com.kaique.mappers;
 
 import br.com.kaique.controllers.dtos.TransactionResponseDto;
-import br.com.kaique.entitys.CardTransaction;
+import br.com.kaique.services.transaction.list_transaction.ListTransactionOutput;
 import org.mapstruct.Mapper;
 import org.mapstruct.factory.Mappers;
 
@@ -9,5 +9,5 @@ import org.mapstruct.factory.Mappers;
 public interface TransactionMapper {
   TransactionMapper INSTANCE = Mappers.getMapper(TransactionMapper.class);
 
-  TransactionResponseDto toDTO(CardTransaction transaction);
+  TransactionResponseDto toDTO(ListTransactionOutput transaction);
 }

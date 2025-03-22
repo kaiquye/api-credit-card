@@ -4,8 +4,10 @@ import br.com.kaique.common.CustomException;
 import br.com.kaique.entitys.CardTransaction;
 import br.com.kaique.repositories.CardRepository;
 import br.com.kaique.repositories.CardStatementRepository;
+import br.com.kaique.repositories.CardTransactionInstallmentRepository;
 import br.com.kaique.repositories.CardTransactionRepository;
 import br.com.kaique.services.transaction.list_transaction.ListTransactionInput;
+import br.com.kaique.services.transaction.list_transaction.ListTransactionOutput;
 import br.com.kaique.services.transaction.list_transaction.ListTransactionUseCase;
 import io.micronaut.http.HttpStatus;
 import jakarta.inject.Inject;
@@ -27,18 +29,22 @@ public class ListTransactionUseCaseImpl implements ListTransactionUseCase {
   @Inject()
   private final CardStatementRepository cardStatementRepository;
 
+  @Inject()
+  private final CardTransactionInstallmentRepository cardTransactionInstallmentRepository;
+
   @Override
-  public List<CardTransaction> execute(ListTransactionInput data) {
+  public List<ListTransactionOutput> execute(ListTransactionInput data) {
     var cardOptional = this.cardRepository.findByAccountNumber(data.accountNumber());
     if (cardOptional.isEmpty()) {
       throw new CustomException("Card by account number not found", HttpStatus.NOT_FOUND);
     }
+    var card = cardOptional.get();
 
     int month = data.monthOfStatement();
     int year = LocalDate.now().getYear();
 
     var cardStatementOptional = this.cardStatementRepository.findByCardIdAndMonth(
-        cardOptional.get().getId(), month, year);
+        card.getId(), month, year);
     if (cardStatementOptional.isEmpty()) {
       throw new CustomException("Statement by account number not found", HttpStatus.NOT_FOUND);
     }
@@ -46,6 +52,11 @@ public class ListTransactionUseCaseImpl implements ListTransactionUseCase {
     var listOfTransactionByStatement = this.cardTransactionRepository.findAllByStatementId(
         cardStatementOptional.get().getId());
 
-    return listOfTransactionByStatement;
+    return listOfTransactionByStatement.stream().map((transaction -> {
+      var currentInstallment = this.cardTransactionInstallmentRepository.findByTransactionIdAndCardId(
+          transaction.getId(), card.getId());
+      return new ListTransactionOutput(transaction,
+          currentInstallment.get().getInstallmentNumber());
+    })).toList();
   }
 }
