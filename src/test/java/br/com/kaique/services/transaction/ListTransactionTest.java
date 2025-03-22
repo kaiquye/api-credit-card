@@ -1,4 +1,4 @@
-package br.com.kaique.services;
+package br.com.kaique.services.transaction;
 
 import br.com.kaique.common.CustomException;
 import br.com.kaique.helper.CreateTransactionHelper;
