@@ -31,8 +31,8 @@ public class CloseStatementUseCaseImpl implements CloseCardStatementUseCase {
   public Void execute(CloseCardStatementInput data) {
     var card = this.findCardByAccountNumberOfFail(data.accountNumber());
 
-    var statement = this.findStatementByCardOrFail(card, data.cardStatementId());
-    if (statement.getStatus().equals(ECardStatementStatus.OPEN)) {
+    var statement = this.findStatementByCardOrFail(card, data.statementId());
+    if (!statement.getStatus().equals(ECardStatementStatus.OPEN)) {
       throw new CustomException("Statement status does not allow this action.",
           HttpStatus.NOT_FOUND);
     }
