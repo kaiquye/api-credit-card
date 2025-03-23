@@ -23,12 +23,14 @@ public class CloseStatementTest {
 
   @Test
   void shouldCloseStatementSuccessfully() {
-    int accountNumber = 1234567;
+    int accountNumber = 11223344;
 
     var card = createTransactionHelper.execute(accountNumber);
+    createTransactionHelper.execute(accountNumber);
+    createTransactionHelper.execute(accountNumber);
     var statementList = this.statementRepository.findAllByCardId(card.getId());
 
-    long statementId = statementList.getLast().getId();
+    long statementId = statementList.getFirst().getId();
 
     var initialStatement = statementRepository.findById(statementId);
 
@@ -56,12 +58,14 @@ public class CloseStatementTest {
 
   @Test
   void shouldThrowExceptionWhenStatementStatusDoesNotAllowClosing() {
-    int accountNumber = 1234567;
+    int accountNumber = 23321212;
 
     var card = createTransactionHelper.execute(accountNumber);
+    createTransactionHelper.execute(accountNumber);
+    createTransactionHelper.execute(accountNumber);
     var statementList = this.statementRepository.findAllByCardId(card.getId());
 
-    long statementId = statementList.getLast().getId();
+    long statementId = statementList.getFirst().getId();
 
     var input = CloseCardStatementInput.builder()
         .accountNumber(accountNumber)
