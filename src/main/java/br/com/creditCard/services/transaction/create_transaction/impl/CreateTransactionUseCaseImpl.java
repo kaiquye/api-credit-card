@@ -46,14 +46,11 @@ public class CreateTransactionUseCaseImpl implements CreateTransactionUseCase {
     CardStatement activeStatement = statementRepository.findStatementOpenedByCardId(card.getId())
         .orElseThrow(() -> new CustomException("No active statement found.", HttpStatus.CONFLICT));
 
-    // Criando uma nova transação
     CardTransaction transaction = createTransaction(input, activeStatement);
     transactionRepository.save(transaction);
 
-    // Criando as parcelas da transação
     List<CardTransactionInstallment> installmentList = createInstallments(input, transaction, card);
 
-    // Atualizando faturas existentes e criando novas se necessario
     List<CardStatement> statementList = processStatements(card, installmentList, transaction);
     statementRepository.saveAll(statementList);
 
@@ -104,7 +101,6 @@ public class CreateTransactionUseCaseImpl implements CreateTransactionUseCase {
 
   private void linkInstallmentsToStatements(List<CardTransactionInstallment> installments,
       List<CardStatement> statements) {
-    // Associando cada parcela à sua respectiva fatura
     for (int i = 0; i < installments.size(); i++) {
       installments.get(i).setStatement(statements.get(i));
     }
@@ -126,13 +122,12 @@ public class CreateTransactionUseCaseImpl implements CreateTransactionUseCase {
       CardTransaction transaction, Card card) {
     List<CardTransactionInstallment> installments = new ArrayList<>();
 
-    // Pegando o número da última parcela registrada para continuar a sequência
+    // Pegando o número da última parcela registrada
     var lastInstallment = this.installmentRepository.findLastByCardIdAndTransactionId(card.getId(), transaction.getId());
     int lastInstallmentNumber = lastInstallment.isPresent()
         ? lastInstallment.get().getInstallmentNumber()
         : 1;
 
-    // Criando as parcelas da transação
     for (int i = 0; i < input.numberOfInstallments(); i++) {
       CardTransactionInstallment installment = new CardTransactionInstallment();
       installment.setInstallmentNumber(lastInstallmentNumber + i);
@@ -159,7 +154,7 @@ public class CreateTransactionUseCaseImpl implements CreateTransactionUseCase {
       statement.getTransactionInstallmentList().add(installment);
     }
 
-    // Novas faturas futuras se necessário
+    // Criando novas faturas
     for (int i = statements.size(); i < installments.size(); i++) {
       LocalDateTime startDate = statements.getLast().getStartedAt().plusMonths(1);
       LocalDateTime dueDate = startDate.plusMonths(1);
