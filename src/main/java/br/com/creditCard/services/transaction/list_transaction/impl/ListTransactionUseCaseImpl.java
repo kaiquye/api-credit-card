@@ -29,6 +29,7 @@ public class ListTransactionUseCaseImpl implements ListTransactionUseCase {
     if (cardOptional.isEmpty()) {
       throw new CustomException("Card by account number not found", HttpStatus.NOT_FOUND);
     }
+
     var card = cardOptional.get();
 
     int month = data.monthOfStatement();
@@ -44,8 +45,8 @@ public class ListTransactionUseCaseImpl implements ListTransactionUseCase {
         cardStatementOptional.get().getId());
 
     return listOfTransactionByStatement.stream().map((transaction -> {
-      var currentInstallment = this.cardTransactionInstallmentRepository.findByTransactionIdAndCardId(
-          transaction.getId(), card.getId());
+      var currentInstallment = this.cardTransactionInstallmentRepository.findByTransactionIdAndStatementId(
+          transaction.getId(), cardStatementOptional.get().getId());
       return new ListTransactionOutput(transaction,
           currentInstallment.get().getInstallmentNumber());
     })).toList();

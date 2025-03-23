@@ -22,25 +22,27 @@ import lombok.Setter;
 public class CreateCardTransactionRequestDto {
 
   @NotNull(message = "Purchase date cannot be null")
-  @Schema(description = "Data da compra", example = "2024-03-15T14:30:00")
+  @Schema(description = "Data da compra",
+      example = "2025-03-22T22:58:00",
+      type = "string")
   private LocalDateTime purchaseDate;
 
   @NotBlank(message = "Company name is required")
-  @Schema(description = "Nome do estabelecimento", example = "Supermercado ABC")
+  @Schema(description = "Nome do estabelecimento", example = "Supermercado BH")
   private String companyName;
 
   @NotNull(message = "Total purchase amount is required")
   @Positive(message = "Total purchase amount must be positive")
-  @Schema(description = "Valor total da compra", example = "1200.00")
+  @Schema(description = "Valor total da compra", example = "1000.00")
   private Double totalPurchaseAmount;
 
   @NotNull(message = "Installment amount is required")
   @PositiveOrZero(message = "Installment amount cannot be negative")
-  @Schema(description = "Valor de cada parcela", example = "100.50")
+  @Schema(description = "Valor de cada parcela", example = "500.50")
   private Double installmentAmount;
 
   @Min(value = 1, message = "Number of installments must be at least 1")
-  @Schema(description = "Número total de parcelas", example = "12")
+  @Schema(description = "Número total de parcelas", example = "2")
   private int numberOfInstallments;
 
   @Min(value = 1, message = "Account number must be positive")

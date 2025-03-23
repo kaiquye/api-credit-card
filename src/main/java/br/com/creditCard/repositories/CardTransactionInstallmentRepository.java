@@ -12,9 +12,12 @@ public interface CardTransactionInstallmentRepository extends
 
   @Query("SELECT cti FROM CardTransactionInstallment cti " +
       "WHERE cti.transaction.id = :transactionId AND cti.statement.id = :cardId")
-  Optional<CardTransactionInstallment> findByTransactionIdAndCardId(Long transactionId,
+  Optional<CardTransactionInstallment> findByTransactionIdAndStatementId(Long transactionId,
       Long cardId);
 
-  @Query("SELECT cti FROM CardTransactionInstallment cti WHERE cti.statement.card.id = :cardId ORDER BY cti.id DESC LIMIT 1")
-  Optional<CardTransactionInstallment> findLastByCardId(Long cardId);
+  @Query(
+      "SELECT cti FROM CardTransactionInstallment cti WHERE cti.transaction.id = :transactionId AND "
+          + "cti.statement.card.id = :cardId ORDER BY cti.id DESC LIMIT 1")
+  Optional<CardTransactionInstallment> findLastByCardIdAndTransactionId(Long cardId,
+      Long transactionId);
 }

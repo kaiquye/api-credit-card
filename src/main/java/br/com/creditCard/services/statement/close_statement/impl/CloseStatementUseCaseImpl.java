@@ -39,24 +39,23 @@ public class CloseStatementUseCaseImpl implements CloseCardStatementUseCase {
     statement.setDueDate(LocalDateTime.now());
     statement.setStatus(ECardStatementStatus.FINALIZED);
 
-    this.cardStatementRepository.save(statement);
+    this.cardStatementRepository.update(statement);
 
     var nextStatementOptional = this.findNextStatement(card);
     if (nextStatementOptional.isPresent()) {
       var nextStatement = nextStatementOptional.get();
       nextStatement.setStatus(ECardStatementStatus.OPEN);
-      nextStatement.setStartedAt(LocalDateTime.now());
 
-      this.cardStatementRepository.save(nextStatement);
-
+      this.cardStatementRepository.update(nextStatement);
       return null;
     }
 
     var newStatement = new CardStatement();
+    var nextMonth = LocalDate.now().plusMonths(1).atStartOfDay();
 
     newStatement.setCard(card);
     newStatement.setTotalAmount(0.0);
-    newStatement.setStartedAt(LocalDateTime.now());
+    newStatement.setStartedAt(nextMonth);
     newStatement.setDueDate(LocalDateTime.now().plusMonths(1));
     newStatement.setStatus(ECardStatementStatus.OPEN);
 

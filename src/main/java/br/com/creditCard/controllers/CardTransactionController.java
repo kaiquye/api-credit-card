@@ -26,11 +26,8 @@ import lombok.RequiredArgsConstructor;
 @Tag(name = "Card Transactions", description = "Operações relacionadas às transações do cartão")
 public class CardTransactionController {
 
-  @Inject
-  private TransactionMapper transactionMapper;
-  @Inject
+  private final TransactionMapper transactionMapper;
   private final CreateTransactionUseCase createTransactionUseCase;
-  @Inject
   private final ListTransactionUseCase listTransactionUseCase;
 
   @Operation(summary = "Cria uma nova transação de cartão",
@@ -71,7 +68,15 @@ public class CardTransactionController {
     var output = this.listTransactionUseCase.execute(input);
 
     List<TransactionResponseDto> responseBody = output.stream()
-        .map(statement -> transactionMapper.toDTO(statement))
+        .map(statement -> {
+          return TransactionResponseDto.builder()
+              .installmentNumber(statement.getInstallmentNumber())
+              .installmentsAmount(statement.getInstallmentsAmount())
+              .installmentsCount(statement.getInstallmentsCount())
+              .totalPurchaseAmount(statement.getTotalPurchaseAmount())
+              .purchaseDate(statement.getPurchaseDate())
+              .companyName(statement.getCompanyName()).build();
+        })
         .collect(Collectors.toList());
 
     return HttpResponse.status(HttpStatus.OK).body(responseBody);

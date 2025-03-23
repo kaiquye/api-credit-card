@@ -127,10 +127,10 @@ public class CreateTransactionUseCaseImpl implements CreateTransactionUseCase {
     List<CardTransactionInstallment> installments = new ArrayList<>();
 
     // Pegando o número da última parcela registrada para continuar a sequência
-    var lastInstallment = this.installmentRepository.findLastByCardId(card.getId());
+    var lastInstallment = this.installmentRepository.findLastByCardIdAndTransactionId(card.getId(), transaction.getId());
     int lastInstallmentNumber = lastInstallment.isPresent()
         ? lastInstallment.get().getInstallmentNumber()
-        : 0;
+        : 1;
 
     // Criando as parcelas da transação
     for (int i = 0; i < input.numberOfInstallments(); i++) {

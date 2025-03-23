@@ -15,7 +15,6 @@ import lombok.RequiredArgsConstructor;
 @Tag(name = "Card Statements", description = "Operações relacionadas aos extratos do cartão")
 public class CardStatementController {
 
-  @Inject
   private final CloseCardStatementUseCase closeCardStatementUseCase;
 
   @Patch("/statement/{statementId}/account/{accountNumber}")
