@@ -61,3 +61,5 @@ O banco de dados possui **5 tabelas principais**:
 - - 3 **CardTransaction** → Representa uma transação (compra).
 - - 4 **CardTransactionInstallment** → Representa as parcelas das compras.
 - - 5 **CardStatementTransaction** → Tabela de associação entre faturas e transações (compras).
+
+![image](https://github.com/user-attachments/assets/ed38f809-4691-4a53-bda4-9f0a6cbb8292)
