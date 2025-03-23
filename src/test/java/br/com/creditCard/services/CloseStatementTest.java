@@ -79,7 +79,7 @@ public class CloseStatementTest {
         () -> this.closeCardStatementUseCase.execute(input)
     );
 
-    Assertions.assertEquals("Statement status does not allow this action.", exception.getMessage());
+    Assertions.assertEquals("A fatura não pode ser fechada porque não está com o status de aberta.", exception.getMessage());
   }
 
   @Test

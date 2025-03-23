@@ -24,27 +24,29 @@ public class CreateTransactionUseCaseImpl implements CreateTransactionUseCase {
   @Override
   public Card execute(CreateTransactionInput input) {
     if (input.numberOfInstallments() <= 0) {
-      throw new CustomException("Number of installments must be greater than zero.",
+      throw new CustomException("O número de parcelas deve ser maior que zero.",
           HttpStatus.BAD_REQUEST);
     }
 
     if (input.totalPurchaseAmount() <= 0) {
-      throw new CustomException("Total purchase amount must be greater than zero.",
+      throw new CustomException("O valor total da compra deve ser maior que zero.",
           HttpStatus.BAD_REQUEST);
     }
 
+    // Buscando cartão pelo número da conta (o cartão representa a conta do usuário)
     Card card = findOrCreateCard(input.accountNumber());
 
     validatePurchaseDate(input.purchaseDate());
     validateInstallmentAmounts(input);
 
     if (transactionRepository.findByPurchaseDate(input.purchaseDate()).isPresent()) {
-      throw new CustomException("A transaction with this purchase date already exists.",
+      throw new CustomException("Já existe uma transação registrada com essa data de compra.",
           HttpStatus.CONFLICT);
     }
 
     CardStatement activeStatement = statementRepository.findStatementOpenedByCardId(card.getId())
-        .orElseThrow(() -> new CustomException("No active statement found.", HttpStatus.CONFLICT));
+        .orElseThrow(() -> new CustomException("Nenhuma fatura ativa encontrada para este cartão.",
+            HttpStatus.CONFLICT));
 
     CardTransaction transaction = createTransaction(input, activeStatement);
     transactionRepository.save(transaction);
@@ -86,7 +88,8 @@ public class CreateTransactionUseCaseImpl implements CreateTransactionUseCase {
 
   private void validatePurchaseDate(LocalDateTime purchaseDate) {
     if (purchaseDate.isBefore(LocalDateTime.now().minusMinutes(3))) {
-      throw new CustomException("The purchase date cannot be in the past.", HttpStatus.BAD_REQUEST);
+      throw new CustomException("A data da compra não pode estar no passado.",
+          HttpStatus.BAD_REQUEST);
     }
   }
 
@@ -94,7 +97,8 @@ public class CreateTransactionUseCaseImpl implements CreateTransactionUseCase {
     double totalCalculated = input.numberOfInstallments() * input.installmentAmount();
     if (input.installmentAmount() > input.totalPurchaseAmount()
         || totalCalculated > input.totalPurchaseAmount()) {
-      throw new CustomException("The total installment amount cannot exceed the purchase amount.",
+      throw new CustomException(
+          "O valor total das parcelas não pode ser maior que o valor da compra.",
           HttpStatus.BAD_REQUEST);
     }
   }
@@ -123,7 +127,8 @@ public class CreateTransactionUseCaseImpl implements CreateTransactionUseCase {
     List<CardTransactionInstallment> installments = new ArrayList<>();
 
     // Pegando o número da última parcela registrada
-    var lastInstallment = this.installmentRepository.findLastByCardIdAndTransactionId(card.getId(), transaction.getId());
+    var lastInstallment = this.installmentRepository.findLastByCardIdAndTransactionId(card.getId(),
+        transaction.getId());
     int lastInstallmentNumber = lastInstallment.isPresent()
         ? lastInstallment.get().getInstallmentNumber()
         : 1;
@@ -154,7 +159,7 @@ public class CreateTransactionUseCaseImpl implements CreateTransactionUseCase {
       statement.getTransactionInstallmentList().add(installment);
     }
 
-    // Criando novas faturas
+    // Criando novas faturas (se necessário)
     for (int i = statements.size(); i < installments.size(); i++) {
       LocalDateTime startDate = statements.getLast().getStartedAt().plusMonths(1);
       LocalDateTime dueDate = startDate.plusMonths(1);

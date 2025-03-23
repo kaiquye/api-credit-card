@@ -27,7 +27,7 @@ public class ListTransactionUseCaseImpl implements ListTransactionUseCase {
   public List<ListTransactionOutput> execute(ListTransactionInput data) {
     var cardOptional = this.cardRepository.findByAccountNumber(data.accountNumber());
     if (cardOptional.isEmpty()) {
-      throw new CustomException("Card by account number not found", HttpStatus.NOT_FOUND);
+      throw new CustomException("Nenhum cartão encontrado para o número da conta informado.", HttpStatus.NOT_FOUND);
     }
 
     var card = cardOptional.get();
@@ -38,7 +38,7 @@ public class ListTransactionUseCaseImpl implements ListTransactionUseCase {
     var cardStatementOptional = this.cardStatementRepository.findByCardIdAndMonth(
         card.getId(), month, year);
     if (cardStatementOptional.isEmpty()) {
-      throw new CustomException("Statement by account number not found", HttpStatus.NOT_FOUND);
+      throw new CustomException("Nenhuma fatura encontrada para o número da conta e mês informados.", HttpStatus.NOT_FOUND);
     }
 
     var listOfTransactionByStatement = this.cardTransactionRepository.findAllByStatementId(

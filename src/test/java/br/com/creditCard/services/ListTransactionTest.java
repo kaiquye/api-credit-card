@@ -67,7 +67,7 @@ public class ListTransactionTest {
         () -> this.listTransactionUseCase.execute(input)
     );
 
-    Assertions.assertEquals("Card by account number not found",
+    Assertions.assertEquals("Nenhum cartão encontrado para o número da conta informado.",
         exception.getMessage());
   }
 }
