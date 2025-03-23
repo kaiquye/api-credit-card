@@ -35,14 +35,12 @@ public class ListTransactionTest {
     var output = this.listTransactionUseCase.execute(input);
 
     Assertions.assertEquals(output.size(), 4);
-    Assertions.assertNotNull(output.getFirst().getId());
     Assertions.assertNotNull(output.getFirst().getCompanyName());
     Assertions.assertNotNull(output.getFirst().getPurchaseDate());
     Assertions.assertNotNull(output.getFirst().getTotalPurchaseAmount());
     Assertions.assertNotNull(output.getFirst().getInstallmentsAmount());
-    Assertions.assertNotNull(output.getFirst().getCurrentInstallmentsNumber());
+    Assertions.assertNotNull(output.getFirst().getInstallmentNumber());
 
-    Assertions.assertEquals(output.getFirst().getId(), 1);
     Assertions.assertEquals(output.getFirst().getCompanyName(), "New Inter Company");
     Assertions.assertEquals(output.getFirst().getInstallmentsCount(), 4);
     Assertions.assertEquals(output.getFirst().getInstallmentsAmount(), 50.0);
