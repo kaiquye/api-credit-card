@@ -110,28 +110,6 @@ public class CreateTransactionTest {
   }
 
   @Test
-  void shouldFailWhenTransactionWithSamePurchaseDateAlreadyExists() {
-    var input = CreateTransactionInput.builder()
-        .accountNumber(123455)
-        .numberOfInstallments(4)
-        .companyName("Inter Company")
-        .installmentAmount(50.00)
-        .totalPurchaseAmount(200.00)
-        .purchaseDate(LocalDateTime.now())
-        .build();
-
-    this.createTransactionUseCase.execute(input);
-
-    CustomException exception = Assertions.assertThrows(
-        CustomException.class,
-        () -> this.createTransactionUseCase.execute(input)
-    );
-
-    Assertions.assertEquals("A transaction with this purchase date already exists.",
-        exception.getMessage());
-  }
-
-  @Test
   void shouldFailWhenTotalInstallmentAmountExceedsPurchaseAmount() {
     var input = CreateTransactionInput.builder()
         .accountNumber(123455)

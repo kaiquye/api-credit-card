@@ -3,7 +3,7 @@
 ## Quem eu sou?
 Olá, me chamo Kaique e trabalho com desenvolvimento de software a mais de 4 anos e atualmente 
 sou engenheiro de software na FIEMG (Federação das Indústrias do Estado de Minas Gerais).
-Durante esse período, trabalhei no desenvolvimento de soluções de pagamento, integrando sistemas às
+Trabalhei no desenvolvimento de soluções de pagamento, integrando sistemas às
 APIs do Itaú para geração de chaves PIX e processamento de transações. Além disso, contribuí para a
 criação de sistemas de gestão utilizados por grandes empresas, como Vale e Stellantis.
 
