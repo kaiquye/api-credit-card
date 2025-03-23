@@ -106,7 +106,7 @@ public class CreateTransactionTest {
         () -> this.createTransactionUseCase.execute(input)
     );
 
-    Assertions.assertEquals("The purchase date cannot be in the past.", exception.getMessage());
+    Assertions.assertEquals("A data da compra não pode estar no passado.", exception.getMessage());
   }
 
   @Test
@@ -124,7 +124,7 @@ public class CreateTransactionTest {
         CustomException.class,
         () -> this.createTransactionUseCase.execute(input)
     );
-    Assertions.assertEquals("The total installment amount cannot exceed the purchase amount.",
+    Assertions.assertEquals("O valor total das parcelas não pode ser maior que o valor da compra.",
         exception.getMessage());
   }
 
@@ -144,7 +144,7 @@ public class CreateTransactionTest {
         () -> this.createTransactionUseCase.execute(input)
     );
 
-    Assertions.assertEquals("Total purchase amount must be greater than zero.",
+    Assertions.assertEquals("O valor total da compra deve ser maior que zero.",
         exception.getMessage());
   }
 
@@ -164,7 +164,7 @@ public class CreateTransactionTest {
         () -> this.createTransactionUseCase.execute(input)
     );
 
-    Assertions.assertEquals("Number of installments must be greater than zero.",
+    Assertions.assertEquals("O número de parcelas deve ser maior que zero.",
         exception.getMessage());
   }
 }

@@ -26,21 +26,24 @@ public class CloseStatementUseCaseImpl implements CloseCardStatementUseCase {
   @Inject
   private final CardRepository cardRepository;
 
+  // Fazendo o fechamento da fatura.
   @Transactional
   @Override
   public Void execute(CloseCardStatementInput data) {
     var card = this.findCardByAccountNumberOfFail(data.accountNumber());
 
+    // buscando a fatura
     var statement = this.findStatementByCardOrFail(card, data.statementId());
     if (!statement.getStatus().equals(ECardStatementStatus.OPEN)) {
-      throw new CustomException("Statement status does not allow this action.",
+      throw new CustomException("A fatura não pode ser fechada porque não está com o status de aberta.",
           HttpStatus.NOT_FOUND);
     }
-    statement.setDueDate(LocalDateTime.now());
-    statement.setStatus(ECardStatementStatus.FINALIZED);
+    statement.setDueDate(LocalDateTime.now()); // atualizando a data de fechamento
+    statement.setStatus(ECardStatementStatus.FINALIZED); // alterando o status.
 
     this.cardStatementRepository.update(statement);
 
+    // Atualizando o status da fatura futura para OPEN ou criando uma nova
     var nextStatementOptional = this.findNextStatement(card);
     if (nextStatementOptional.isPresent()) {
       var nextStatement = nextStatementOptional.get();
