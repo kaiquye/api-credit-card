@@ -60,7 +60,7 @@ public class CreateTransactionTest {
   @Test
   void shouldCreateTransactionWithFourInstallments() {
     var input = CreateTransactionInput.builder()
-        .accountNumber(123455)
+        .accountNumber(4444444)
         .numberOfInstallments(4)
         .companyName("Inter Company")
         .installmentAmount(50.00)
@@ -74,7 +74,7 @@ public class CreateTransactionTest {
 
     var statementList = this.statementRepository.findAllByCardId(output.getId());
     Assertions.assertEquals(statementList.size(), input.numberOfInstallments());
-    Assertions.assertEquals(ECardStatementStatus.OPEN, statementList.getLast().getStatus());
+    Assertions.assertEquals(ECardStatementStatus.OPEN, statementList.getFirst().getStatus());
     Assertions.assertEquals(statementList.getLast().getTotalAmount(), input.installmentAmount());
 
     var transactionListByStatement = this.transactionRepository.findAllByStatementId(
