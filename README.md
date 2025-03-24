@@ -1,5 +1,9 @@
 ## Desafio – Meios de Pagamentos 💸
 
+PDF do desafio recebido:
+[DesafioMPCartoes.pdf](https://github.com/user-attachments/files/19431090/DesafioMPCartoes.pdf)
+
+
 ## Quem eu sou?
 Olá, me chamo Kaique e trabalho com desenvolvimento de software a mais de 4 anos e atualmente 
 sou engenheiro de software na FIEMG (Federação das Indústrias do Estado de Minas Gerais).
